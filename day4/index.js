@@ -1170,8 +1170,18 @@ eyr:2022
 
 iyr:2010 hgt:158cm hcl:#b6652a ecl:blu byr:1944 eyr:2021 pid:093154719`
 
-const requiredKeys = ['byr', 'iyr', 'eyr', 'hgt', 'hcl', 'ecl', 'pid']
-const optionalKeys = ['cid'] // doesn't do anything
+const requiredKeyValidators = {
+  byr: v => /^\d{4}$/.test(v) && v >= 1920 && v <= 2002,
+  iyr: v => /^\d{4}$/.test(v) && v >= 2010 && v <= 2020,
+  eyr: v => /^\d{4}$/.test(v) && v >= 2020 && v <= 2030,
+  hgt: v => {
+    let hgtM = v && v.match(/^(\d+)(cm|in)$/)
+    return hgtM && ((hgtM[2] === 'cm' && hgtM[1] >= 150 && hgtM[1] <= 193) || (hgtM[2] === 'in' && hgtM[1] >= 59 && hgtM[1] <= 76))
+  },
+  hcl: v => /^#[0-9a-f]{6}$/.test(v),
+  ecl: v => /^(amb|blu|brn|gry|grn|hzl|oth)$/.test(v),
+  pid: v => /^\d{9}$/.test(v),
+}
 
 function getPassports(inputs) {
   return inputs.split(/\n{2}/).map(p => p.split(/[\s]/).map(kv => kv.split(':')))
@@ -1182,12 +1192,12 @@ function getPassports(inputs) {
  */
 console.log('PART 1')
 let passports = getPassports(inputs)
-let countValidPassports = passports.reduce((acc, values) => {
-  passportKeys = values.map(([key]) => key)
-  if (requiredKeys.every(requiredKey => passportKeys.includes(requiredKey))) {
-    return acc + 1
-  }
-  return acc
+let countValidPassports = passports.reduce((acc, passport) => {
+  passportKeys = passport.map(([key]) => key)
+
+  const isValid = Object.keys(requiredKeyValidators).every(key => passportKeys.includes(key))
+
+  return isValid ? acc + 1 : acc
 }, 0)
 console.log(countValidPassports)
 
@@ -1196,22 +1206,10 @@ console.log(countValidPassports)
  */
 console.log('PART 2')
 passports = getPassports(inputs)
-countValidPassports = passports.reduce((acc, p) => {
-  p = Object.fromEntries(p)
-  const isValid = requiredKeys.every(requiredKey => {
-    if (!Object.keys(p).includes(requiredKey)) {
-      return false
-    }
-    if (!(/^\d{4}$/.test(p.byr) && p.byr >= 1920 && p.byr <= 2002)) return false
-    if (!(/^\d{4}$/.test(p.iyr) && p.iyr >= 2010 && p.iyr <= 2020)) return false
-    if (!(/^\d{4}$/.test(p.eyr) && p.eyr >= 2020 && p.eyr <= 2030)) return false
-    let hgtM = p.hgt && p.hgt.match(/^(\d+)(cm|in)$/)
-    if (!(hgtM && ((hgtM[2] === 'cm' && hgtM[1] >= 150 && hgtM[1] <= 193) || (hgtM[2] === 'in' && hgtM[1] >= 59 && hgtM[1] <= 76)))) return false
-    if (!(/^#[0-9a-f]{6}$/.test(p.hcl))) return false
-    if (!(/^(amb|blu|brn|gry|grn|hzl|oth)$/.test(p.ecl))) return false
-    if (!(/^\d{9}$/.test(p.pid))) return false
-    return true
-  })
+countValidPassports = passports.reduce((acc, passport) => {
+  passport = Object.fromEntries(passport)
+
+  const isValid = Object.entries(requiredKeyValidators).every(([key, validator]) => Object.keys(passport).includes(key) && validator(passport[key]))
 
   return isValid ? acc + 1 : acc
 }, 0)

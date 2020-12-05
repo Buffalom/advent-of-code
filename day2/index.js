@@ -7,22 +7,10 @@ const regex = /^(\d+)-(\d+) ([a-z]): (\w+)$/
 console.log('PART 1')
 const valid1 = inputs.filter(input => {
   const matches = input.match(regex)
-  let count = 0
 
-  for (let char of matches[4]) {
-    if (char === matches[3]) {
-      count++
-    }
-    if (count > matches[2]) {
-      return false
-    }
-  }
+  const count = matches[4].split('').reduce((acc, char) => char === matches[3] ? acc + 1 : acc, 0)
 
-  if (count < matches[1]) {
-    return false
-  }
-
-  return true
+  return count <= matches[2] && count >= matches[1]
 })
 console.log(valid1.length)
 
